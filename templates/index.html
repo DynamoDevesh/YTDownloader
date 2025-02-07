@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Downloader</title>
+</head>
+<body>
+    <h2>YouTube Video Downloader</h2>
+    
+    <input type="text" id="url" placeholder="Enter YouTube URL">
+    <button onclick="fetchFormats()">Get Formats</button>
+
+    <select id="format">
+        <option value="">Select Format</option>
+    </select>
+
+    <button onclick="downloadVideo()">Download</button>
+    <p id="message"></p>
+    <a id="downloadLink" style="display:none;" download>Click here to download</a>
+
+    <script>
+        function fetchFormats() {
+            let url = document.getElementById("url").value;
+            if (!url) {
+                alert("Please enter a YouTube URL first!");
+                return;
+            }
+
+            fetch("/formats", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url: url })
+            })
+            .then(response => response.json())
+            .then(data => {
+                let formatSelect = document.getElementById("format");
+                formatSelect.innerHTML = ""; // Clear previous options
+
+                if (data.formats) {
+                    data.formats.forEach(format => {
+                        let optionText = format.resolution 
+                            ? `📹 ${format.resolution} (${format.ext})`
+                            : `🎵 ${format.audio_bitrate} (${format.ext})`;
+
+                        let option = new Option(optionText, format.format_id);
+                        formatSelect.appendChild(option);
+                    });
+                } else {
+                    alert("No formats available!");
+                }
+            })
+            .catch(error => {
+                alert("Error fetching formats: " + error);
+            });
+        }
+
+        function downloadVideo() {
+            let url = document.getElementById("url").value;
+            let format = document.getElementById("format").value;
+
+            if (!url || !format) {
+                alert("Please enter a URL and select a format!");
+                return;
+            }
+
+            fetch("/download", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url: url, format: format })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.file_path) {
+                    document.getElementById("message").innerText = "Download ready!";
+                    let link = document.getElementById("downloadLink");
+                    link.href = "/get-file?file_path=" + encodeURIComponent(data.file_path);
+                    link.style.display = "block";
+                } else {
+                    document.getElementById("message").innerText = data.error;
+                }
+            })
+            .catch(error => {
+                alert("Error downloading video: " + error);
+            });
+        }
+    </script>
+</body>
+</html>
