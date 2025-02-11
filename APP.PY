@@ -47,7 +47,6 @@ def get_formats():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route("/download", methods=["POST"])
 def download_video():
     data = request.json
@@ -58,9 +57,12 @@ def download_video():
         return jsonify({"error": "Missing URL or format"}), 400
 
     try:
+        cookies_path = "cookies.txt"  # Ensure this file exists in your project directory
+
         ydl_opts = {
             "format": format_id,  # Use the selected format ID
             "outtmpl": os.path.join(DOWNLOAD_FOLDER, "%(title)s.%(ext)s"),
+            "cookies": cookies_path,  # Pass cookies to bypass login restrictions
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -71,8 +73,6 @@ def download_video():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
 
 @app.route("/get-file", methods=["GET"])
 def get_file():
